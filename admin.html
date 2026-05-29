@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrace - Cinema Cichna</title>
+    <link rel="stylesheet" href="stylovka.css">
+    <style>
+        .admin-container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--primary); }
+        .form-group textarea { height: 100px; resize: vertical; }
+        .admin-movie-item { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--primary); border-radius: 4px; }
+        .btn-delete { background: #e74c3c; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-delete:hover { background: #c0392b; }
+        .btn-edit { background: var(--primary); color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        .btn-edit:hover { opacity: 0.8; }
+        .flex-buttons { display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+
+<header class="main-header">
+    <div class="header-content">
+        <div class="logo" onclick="window.location.href='index.html'">CINEMA <span>CICHNA</span></div>
+        <nav class="main-nav">
+            <a href="index.html">Zpět na web</a>
+        </nav>
+        <div class="header-actions">
+            <button onclick="logoutAdmin()" class="btn-logout">Odhlásit</button>
+        </div>
+    </div>
+</header>
+
+<main class="admin-container">
+    <h1 style="border-bottom: 2px solid var(--primary); padding-bottom: 10px;">Správa kina</h1>
+    
+    <div class="admin-panels">
+        <div class="admin-card">
+            <h2 id="formTitle">Přidat nový film</h2>
+            <div id="addMovieForm">
+                <div class="form-group">
+                    <label>Název filmu:</label>
+                    <input type="text" id="mTitle" class="form-input" placeholder="Např. Avatar: The Way of Water">
+                </div>
+                <div class="form-group">
+                    <label>Formát / Kategorie:</label>
+                    <input type="text" id="mFormat" class="form-input" placeholder="Např. 3D s dabingem">
+                </div>
+                <div class="form-group">
+                    <label>Číslo sálu (1-8):</label>
+                    <input type="number" id="mHall" class="form-input" min="1" max="8" value="1">
+                </div>
+                <div class="form-group">
+                    <label>URL plakátu (obrázek):</label>
+                    <input type="text" id="mImage" class="form-input" placeholder="https://odkaz-na-obrazek.cz/obr.jpg">
+                </div>
+                <div class="form-group">
+                    <label>Krátký popis:</label>
+                    <textarea id="mDesc" class="form-input" placeholder="O čem film je..."></textarea>
+                </div>
+                <p id="adminError" class="error-msg"></p>
+                
+                <div class="flex-buttons">
+                    <button id="submitMovieBtn" class="btn-primary w-100" onclick="saveMovie()">Přidat film do databáze</button>
+                    <button id="cancelEditBtn" class="btn-back w-100" style="display: none;" onclick="cancelEdit()">Zrušit úpravu</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="admin-card">
+            <h2>Spravovat filmy</h2>
+            <div id="adminMovieList">
+                <p>Načítám filmy...</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    let allAdminMovies = [];
+    let editingMovieId = null; 
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const storedUser = localStorage.getItem('cinemaUser');
+        if (!storedUser) {
+            alert("Přístup odepřen. Nejsi přihlášen.");
+            window.location.href = 'index.html';
+            return;
+        }
+        const user = JSON.parse(storedUser);
+        if (user.role !== 'admin') {
+            alert("Přístup odepřen. Nemáš administrátorská práva.");
+            window.location.href = 'index.html';
+        }
+        loadAdminMovies();
+    });
+
+    function logoutAdmin() {
+        localStorage.removeItem('cinemaUser');
+        window.location.href = 'index.html';
+    }
+
+    async function loadAdminMovies() {
+        try {
+            const res = await fetch('./rezervace.php?action=get_movies');
+            allAdminMovies = await res.json();
+            const list = document.getElementById('adminMovieList');
+            list.innerHTML = '';
+
+            if (allAdminMovies.length === 0) {
+                list.innerHTML = '<p style="color: #aaa;">Žádné filmy v databázi.</p>';
+                return;
+            }
+
+            allAdminMovies.forEach(movie => {
+                const item = document.createElement('div');
+                item.className = 'admin-movie-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${movie.title}</strong><br>
+                        <span style="font-size: 12px; color: #aaa;">Sál ${movie.hall || 1} | ${movie.format}</span>
+                    </div>
+                    <div>
+                        <button class="btn-edit" onclick="startEdit(${movie.id})">Upravit</button>
+                        <button class="btn-delete" onclick="deleteMovie(${movie.id})">Smazat</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        } catch (e) {
+            console.error("Chyba při načítání filmů:", e);
+        }
+    }
+
+    //Načte film do formuláře k úpravě
+    function startEdit(id) {
+        const movie = allAdminMovies.find(m => m.id === id);
+        if (!movie) return;
+        
+        editingMovieId = movie.id;
+        document.getElementById('formTitle').textContent = "Upravit film: " + movie.title;
+        document.getElementById('mTitle').value = movie.title;
+        document.getElementById('mFormat').value = movie.format;
+        document.getElementById('mHall').value = movie.hall || 1;
+        document.getElementById('mImage').value = movie.image_url;
+        document.getElementById('mDesc').value = movie.description;
+
+        document.getElementById('submitMovieBtn').textContent = "Uložit změny";
+        document.getElementById('cancelEditBtn').style.display = "block";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Zruší režim úprav
+    function cancelEdit() {
+        editingMovieId = null;
+        document.getElementById('formTitle').textContent = "Přidat nový film";
+        document.getElementById('mTitle').value = '';
+        document.getElementById('mFormat').value = '';
+        document.getElementById('mHall').value = '1';
+        document.getElementById('mImage').value = '';
+        document.getElementById('mDesc').value = '';
+
+        document.getElementById('submitMovieBtn').textContent = "Přidat film do databáze";
+        document.getElementById('cancelEditBtn').style.display = "none";
+    }
+
+    // Odeslání formuláře (zvládne přidání i úpravu)
+    async function saveMovie() {
+        const title = document.getElementById('mTitle').value;
+        const format = document.getElementById('mFormat').value;
+        const hall = document.getElementById('mHall').value;
+        const image_url = document.getElementById('mImage').value;
+        const description = document.getElementById('mDesc').value;
+        const errorMsg = document.getElementById('adminError');
+
+        if (!title || !format || !image_url) {
+            errorMsg.textContent = "Vyplňte prosím Název, Formát a Odkaz na obrázek.";
+            return;
+        }
+
+        errorMsg.textContent = "Ukládám...";
+        errorMsg.style.color = "white";
+
+        // Pokud máme ID, tak upravujeme. Pokud ne, přidáváme.
+        const action = editingMovieId ? 'edit_movie' : 'add_movie';
+        const payload = { title, format, hall, image_url, description };
+        if (editingMovieId) payload.id = editingMovieId;
+
+        try {
+            const res = await fetch('./rezervace.php?action=' + action, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: {'Content-Type': 'application/json'}
+            });
+            
+            const data = await res.json();
+            
+            if(data.success) {
+                alert(editingMovieId ? "Film byl úspěšně upraven!" : "Film byl úspěšně přidán!");
+                cancelEdit();
+                errorMsg.textContent = '';
+                loadAdminMovies(); 
+            } else {
+                errorMsg.style.color = "red";
+                errorMsg.textContent = data.message;
+            }
+        } catch (e) {
+            errorMsg.style.color = "red";
+            errorMsg.textContent = "Chyba při komunikaci se serverem.";
+        }
+    }
+
+    async function deleteMovie(id) {
+        if (!confirm("Opravdu chceš tento film trvale smazat?")) return;
+
+        try {
+            const res = await fetch('./rezervace.php?action=delete_movie', {
+                method: 'POST',
+                body: JSON.stringify({ id: id }),
+                headers: {'Content-Type': 'application/json'}
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                loadAdminMovies(); 
+            } else {
+                alert("Chyba: " + data.message);
+            }
+        } catch (e) {
+            alert("Chyba při komunikaci se serverem.");
+        }
+    }
+</script>
+</body>
+</html>

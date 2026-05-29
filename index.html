@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinema Cichna</title>
+    <link rel="stylesheet" href="stylovka.css">
+</head>
+<body>
+
+<header class="main-header">
+    <div class="header-content">
+        <div class="logo" onclick="location.reload()">CINEMA <span>CICHNA</span></div>
+        <nav class="main-nav">
+            <a href="#" class="active">Program a vstupenky</a>
+        </nav>
+        <div class="header-actions">
+            <button id="loginBtn" class="btn-login" onclick="showModal('loginModal')">Můj účet</button>
+            <div id="userMenu" class="hidden">
+                <span id="userName"></span>
+                <a href="admin.html" id="adminLink" class="hidden btn-admin">Administrace</a>
+                <button onclick="logout()" class="btn-logout">Odhlásit</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section class="hero-banner" id="heroBanner">
+        <div class="hero-content container">
+            <h1>Epický filmový zážitek</h1>
+            <p>Vyberte si z nejnovějších trháků a užijte si dokonalý obraz i zvuk.</p>
+            <button class="btn-primary" onclick="document.getElementById('stepMovies').scrollIntoView({behavior: 'smooth'})">Zobrazit program</button>
+        </div>
+    </section>
+
+    <div class="container">
+        <section id="stepMovies" class="step-section">
+            <div class="section-heading">
+                <h2 class="page-title">Právě hrajeme</h2>
+                <div class="filters">
+                    <button class="btn-filter active">Všechny filmy</button>
+                </div>
+            </div>
+            <div id="movieGrid" class="movies-grid"></div>
+        </section>
+
+        <section id="stepSeats" class="step-section hidden">
+            <div class="booking-header">
+                <button class="btn-back" onclick="goToStep('stepMovies')">← Zpět na program</button>
+                <h2 id="movieTitleDisplay">Název filmu</h2>
+                <p id="movieHallDisplay" class="hall-info">Sál X</p>
+            </div>
+
+            <div class="cinema-room">
+                <div class="screen">PLÁTNO</div>
+                <div class="legend">
+                    <span class="leg-item"><div class="seat"></div> Volné</span>
+                    <span class="leg-item"><div class="seat selected"></div> Váš výběr</span>
+                    <span class="leg-item"><div class="seat reserved"></div> Obsazené</span>
+                </div>
+                <div id="seatMap" class="seat-map"></div>
+            </div>
+            
+            <div class="booking-footer">
+                <p id="seatError" class="error-msg"></p>
+                <button class="btn-primary" onclick="proceedToCheckout()">Pokračovat k rezervaci</button>
+            </div>
+        </section>
+
+        <section id="stepCheckout" class="step-section hidden card-centered">
+            <h2>Dokončení rezervace</h2>
+            <p>Pro zaslání lístků potřebujeme váš e-mail.</p>
+            <div class="input-group">
+                <input type="email" id="guestEmail" placeholder="Zadejte svůj e-mail" class="form-input">
+                <button class="btn-primary w-100 mt-20" onclick="finalizeBooking()">Potvrdit rezervaci</button>
+            </div>
+            <button class="btn-back mt-20" onclick="goToStep('stepSeats')">Zpět na sedadla</button>
+            <p id="checkoutError" class="error-msg"></p>
+        </section>
+
+        <section id="stepSuccess" class="step-section hidden card-centered success-card">
+            <div class="success-icon">✓</div>
+            <h2>Rezervace byla úspěšná!</h2>
+            <p id="successMessage"></p>
+            <button class="btn-primary mt-20" onclick="location.reload()">Nová rezervace</button>
+        </section>
+    </div>
+</main>
+
+<div id="loginModal" class="modal">
+    <div class="modal-box">
+        <span class="close-btn" onclick="closeModal('loginModal')">&times;</span>
+        <h2>Přihlášení / Registrace</h2>
+        <input type="email" id="loginEmail" placeholder="E-mail" class="form-input">
+        <input type="password" id="loginPassword" placeholder="Heslo" class="form-input">
+        
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="btn-primary w-100" onclick="login()">Přihlásit</button>
+            <button class="btn-login w-100" onclick="register()">Registrovat</button>
+        </div>
+        
+        <p id="loginError" class="error-msg"></p>
+    </div>
+</div>
+
+<script src="index.JS"></script>
+</body>
+</html>
