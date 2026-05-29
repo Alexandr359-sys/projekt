@@ -10,6 +10,9 @@ Cinema Cichna je školní projekt. Cílem projektu bylo vytvořit plnohodnotnou 
 2. **Typ projektu:** Webová aplikace napojená na databázi MySQL (správa uživatelů, filmů a rezervací).
 3. **Specifikace:** Registrace a autentizace uživatelů, interaktivní výběr sedadel v sále, nákup/rezervace lístků na zadaný e-mail a zabezpečená administrace programu.
 
+## Spuštění stránky
+* Pro podívání se/vyzkoušní stránky odkaz zde : https://cinemacichna.xo.je/
+
 ## Hlavní funkce
 
 ### Uživatelské a administrátorské funkce
